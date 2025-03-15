@@ -118,42 +118,105 @@
 // export default App;
 
 
-import React from 'react';
-import { Button, View, Image, Text } from 'react-native';
-import { launchImageLibrary } from 'react-native-image-picker';
+// import React from 'react';
+// import { Button, View, Image, Text } from 'react-native';
+// import { launchImageLibrary } from 'react-native-image-picker';
 
-const GalleryAccess = () => {
-  const [selectedImage, setSelectedImage] = React.useState(null);
+// const GalleryAccess = () => {
+//   const [selectedImage, setSelectedImage] = React.useState(null);
 
-  const openGallery = () => {
-    const options = {
-      mediaType: 'photo',
-    };
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.errorMessage) {
-        console.log('Error: ', response.errorMessage);
-      } else {
-        const asset = response.assets[0];
-        setSelectedImage(asset.uri);
-        console.log('Selected image: ', asset);
-      }
-    });
+//   const openGallery = () => {
+//     const options = {
+//       mediaType: 'photo',
+//     };
+//     launchImageLibrary(options, (response) => {
+//       if (response.didCancel) {
+//         console.log('User cancelled image picker');
+//       } else if (response.errorMessage) {
+//         console.log('Error: ', response.errorMessage);
+//       } else {
+//         const asset = response.assets[0];
+//         setSelectedImage(asset.uri);
+//         console.log('Selected image: ', asset);
+//       }
+//     });
+//   };
+
+//   return (
+//     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+//       <Button title="Open Gallery" onPress={openGallery} />
+//       {selectedImage && (
+//         <Image
+//           source={{ uri: selectedImage }}
+//           style={{ width: 200, height: 200, marginTop: 20 }}
+//         />
+//       )}
+//     </View>
+//   );
+// };
+
+// export default GalleryAccess;
+
+
+
+
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, PermissionsAndroid, Platform } from 'react-native';
+import Contacts from 'react-native-contacts';
+
+const ContactsAccess = () => {
+  const [contacts, setContacts] = useState([]);
+
+  // Function to request permission on Android
+  const requestContactPermission = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+        {
+          title: 'Contacts',
+          message: 'This app would like to view your contacts.',
+          buttonPositive: 'OK',
+        }
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (err) {
+      console.warn(err);
+      return false;
+    }
   };
 
+  useEffect(() => {
+    const fetchContacts = async () => {
+      if (Platform.OS === 'android') {
+        const permission = await requestContactPermission();
+        if (!permission) return;
+      }
+      Contacts.getAll((err, contacts) => {
+        if (err) {
+          console.log('Error fetching contacts: ', err);
+          return;
+        }
+        setContacts(contacts);
+      });
+    };
+
+    fetchContacts();
+  }, []);
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Button title="Open Gallery" onPress={openGallery} />
-      {selectedImage && (
-        <Image
-          source={{ uri: selectedImage }}
-          style={{ width: 200, height: 200, marginTop: 20 }}
-        />
-      )}
+    <View style={{ flex: 1, padding: 20 }}>
+      <Text style={{ fontSize: 20, marginBottom: 10 }}>Contacts List:</Text>
+      <FlatList
+        data={contacts}
+        keyExtractor={(item) => item.recordID}
+        renderItem={({ item }) => (
+          <Text>{item.givenName} {item.familyName}</Text>
+        )}
+      />
     </View>
   );
 };
 
-export default GalleryAccess;
+export default ContactsAccess;
+
 
